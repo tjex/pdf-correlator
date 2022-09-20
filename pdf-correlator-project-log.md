@@ -75,6 +75,14 @@ Now I have pdf sourcing, text extraction and file creation in place I need to fi
 
 Need to look at NLP (Natural Language Processing). Don't go for BOW (Bag of Words) as it discards word order, which would take a lot of meaning out of the results in comparing two texts together - if the two pdfs were simply compared on word frequency. Instead look at Word Embedding. Word2Vec [comes highly recommended by this author](https://towardsdatascience.com/machine-learning-text-processing-1d5a2d638958), along with its GloVe extension. Also [NLTK](https://www.nltk.org/howto/semantics.html).
 
+[use scipy to compare similarity between vectors](https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.cosine.html) which can be integrated with word2vec or other vector libraries for ML that transform words / sentences into vector spaces. doc2vec does sentences.
+
+Looks like doc2vec is a viable option. It's specifically designed to detect similarites between documents - maintaining sentence structure. However, this will put a bias towards sentence structure, which may not give very useful results as academic papers are of a particular format and communication style, meaning that there may be strong correlation between papers by defaulr when looking at their sentence structure.  
+Therefore, word2vec might be worth looking at first. 
+[doc2vec medium tutorial](https://medium.com/red-buffer/doc2vec-computing-similarity-between-the-documents-47daf6c828cd)
+
+[word2vec jupyter notebook example](https://github.com/minsuk-heo/python_tutorial/blob/master/data_science/nlp/word2vec_tensorflow.ipynb)
+
 
 
 Concept
