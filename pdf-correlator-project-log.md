@@ -79,9 +79,122 @@ Need to look at NLP (Natural Language Processing). Don't go for BOW (Bag of Word
 
 Looks like doc2vec is a viable option. It's specifically designed to detect similarites between documents - maintaining sentence structure. However, this will put a bias towards sentence structure, which may not give very useful results as academic papers are of a particular format and communication style, meaning that there may be strong correlation between papers by defaulr when looking at their sentence structure.  
 Therefore, word2vec might be worth looking at first. 
-[doc2vec medium tutorial](https://medium.com/red-buffer/doc2vec-computing-similarity-between-the-documents-47daf6c828cd)
 
-[word2vec jupyter notebook example](https://github.com/minsuk-heo/python_tutorial/blob/master/data_science/nlp/word2vec_tensorflow.ipynb)
+### 2022-09-21
+In the end, doc2vec seems best as I am in reality looking to compare documents. Not only this, but doc2vec [incorperates word2vec heavily anyway](https://medium.com/wisio/a-gentle-introduction-to-doc2vec-db3e8c0cce5e).
+> "In the inference stage, a new document may be presented, and all weights are fixed to calculate the document vector."
+
+- [doc2vec medium tutorial](https://medium.com/red-buffer/doc2vec-computing-similarity-between-the-documents-47daf6c828cd)  
+- [word2vec jupyter notebook example](https://github.com/minsuk-heo/python_tutorial/blob/master/data_science/nlp/word2vec_tensorflow.ipynb)
+
+I think I just trained a model (no errors)...
+```python
+import os, glob, re, io, random, gensim
+import numpy as np
+
+from PyPDF2 import PdfReader
+from gensim.models.doc2vec import Doc2Vec, TaggedDocument
+from gensim.test.utils import get_tmpfile
+from nltk.tokenize import word_tokenize
+
+pdfReaders = []
+pdfFiles = []
+taggedData = []
+docLabels = []
+wordSets = []
+
+rootDir = "/Users/tillman/t-root/dev/projects/2022/pdf-correlator/gitignored"
+txtExtractDir = "/Users/tillman/t-root/dev/projects/2022/pdf-correlator/gitignored/txt-extractions/"
+
+# read files and extract to .txt files
+def read_files():
+    os.chdir(rootDir)
+    for file in glob.glob("**/*.pdf"):
+        pdfFiles.append(file)
+        pdfReaders.append(PdfReader(file))
+    print("pdf files read")
+        
+def extract_to_txt():
+    os.chdir(txtExtractDir)
+    for i in pdfReaders:
+        with open(i.metadata.title + ".txt", 'w', encoding="utf-8") as file:
+            
+            # add doc title to array for tagging
+            docLabels.append(i.metadata.title)
+            print("doc labels: " + str(len(docLabels)))
+            
+            for j in range(0, len(i.pages)):
+                # create a text file for future reference / future use
+                file.write(i.getPage(j).extract_text())                   
+                
+    print("text extraction complete")
+    
+    
+def clean_tag_tokenize():
+    
+    # read from the generated .txt files, clean and append to array
+    for i in range (0, len(docLabels)):
+        words = open(docLabels[i] + '.txt').read()
+        words = words.replace("\n", " ")
+        words = words.replace("  ", " ")
+        words = words.lower()
+        words = ''.join([i for i in words if i.isalpha() or i.isspace() or (i in '.!?:"')])
+        words = words.replace(".", " . ")
+        words = words.replace("!", " ! ")
+        words = words.replace("?", " ? ")
+        words = words.replace(":", " : ")
+        words = words.replace('"', ' " ')
+        words = words.split()
+        
+        wordSets.append(words)
+        print("word sets: " + str(len(wordSets)))
+        
+    # tag the cleaned words with txt document heading (derived from pdf doc title)
+    for i in range (0, len(docLabels)):
+        taggedData.append(TaggedDocument(words=wordSets[i], tags=docLabels[i]))
+        print(taggedData[0])
+
+read_files()
+extract_to_txt()
+clean_tag_tokenize()
+
+# The Model
+
+model = Doc2Vec(taggedData, vector_size=5, window=2, min_count=1, workers=4)
+fname = get_tmpfile("pdf_corr_doc2vec_model_0.1")
+
+model.save(fname)
+model = Doc2Vec.load(fname)
+```
+
+Replaced the above `clean_tag_tokenize()` function with the function suggested in that found in a turorial on the Gensim website. 
+```python
+def read_corpus(fname, tokens_only=False):
+    with smart_open.open(fname, encoding="iso-8859-1") as f:
+        for i, line in enumerate(f):
+            tokens = gensim.utils.simple_preprocess(line)
+            if tokens_only:
+                yield tokens
+            else:
+                # For training data, add tags
+                yield gensim.models.doc2vec.TaggedDocument(tokens, [i])
+
+read_files()
+extract_to_text()
+
+train_corpus = list(read_corpus(txtExtractDir + docLabels[0] + ".txt")) 
+for i in range (1, len(docLabels)):
+    train_corpus += list(read_corpus(txtExtractDir + docLabels[i] + ".txt"))
+    
+print(train_corpus)
+```
+
+This gets me a much cleaner list of tagged words, that resembles the format on the Gensim code examples. However, I'm not sure if the way I've iterated through the .txt docs above (in order to fill the train_corpus as one singular object) is correct. The object does get filled and tagged successfully, but the tagging is not consecutive across the documents. ie, new-dark-age.txt gets tagged up to tag=71, then the second document is processed, but starts with the first line being tagged as 0. This means that within the training corpus, there are multiple tags 0..1..2..etc.   
+I expect this will create innacurate behaviour as I expect each line in the final training corpus has to have a unique tag.
+
+
+
+
 
 
 
