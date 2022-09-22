@@ -167,7 +167,7 @@ model.save(fname)
 model = Doc2Vec.load(fname)
 ```
 
-Replaced the above `clean_tag_tokenize()` function with the function suggested in that found in a turorial on the Gensim website. 
+Replaced the above `clean_tag_tokenize()` function with the function suggested in that found in a [turorial on the Gensim website](https://radimrehurek.com/gensim/auto_examples/tutorials/run_doc2vec_lee.html#sphx-glr-auto-examples-tutorials-run-doc2vec-lee-py). 
 ```python
 def read_corpus(fname, tokens_only=False):
     with smart_open.open(fname, encoding="iso-8859-1") as f:
@@ -192,7 +192,26 @@ print(train_corpus)
 This gets me a much cleaner list of tagged words, that resembles the format on the Gensim code examples. However, I'm not sure if the way I've iterated through the .txt docs above (in order to fill the train_corpus as one singular object) is correct. The object does get filled and tagged successfully, but the tagging is not consecutive across the documents. ie, new-dark-age.txt gets tagged up to tag=71, then the second document is processed, but starts with the first line being tagged as 0. This means that within the training corpus, there are multiple tags 0..1..2..etc.   
 I expect this will create innacurate behaviour as I expect each line in the final training corpus has to have a unique tag.
 
+### 2022-09-22
+Instead of trying to make every line (sentence / document) tag unique, I figured to prepend to the tag, the name of the .txt file. This should work just the same in terms of stopping any confusion in the vectorization, and may even give me more possibilities of data checking later down the track. 
 
+```python
+def read_corpus(fname, tokens_only=False):
+        
+    with smart_open.open(fname, encoding="iso-8859-1") as f:
+        for i, line in enumerate(f):
+            tokens = gensim.utils.simple_preprocess(line)
+            if tokens_only:
+                yield tokens
+            else:
+                # For training data, add tags
+                for label in docLabels:
+                    yield gensim.models.doc2vec.TaggedDocument(tokens, label + str(-i))
+```
+
+Indeed the improper tagging system has screwed me. I'm up to the step of assessing the model, whereby I need to iterate through the training corpus to programmatically fill other variables. The iteration is counting the ids of the tagged documents (lines in a .txt file) but as there are two txt documents in the corpus, each starting their tags at 0, the for loop is effectively counting one tag for two sentences and thereforeit is registering a missmatch between the range in which it should loop, and the content which the object has within it...    
+
+I will need to go back to the corpus building stage. Either I need to find the way in which multiple txt files are handled properly, or I need to create one massive txt file from all other txt files and use that as the training corpus.
 
 
 
