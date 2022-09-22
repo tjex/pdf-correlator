@@ -211,7 +211,11 @@ def read_corpus(fname, tokens_only=False):
 
 Indeed the improper tagging system has screwed me. I'm up to the step of assessing the model, whereby I need to iterate through the training corpus to programmatically fill other variables. The iteration is counting the ids of the tagged documents (lines in a .txt file) but as there are two txt documents in the corpus, each starting their tags at 0, the for loop is effectively counting one tag for two sentences and thereforeit is registering a missmatch between the range in which it should loop, and the content which the object has within it...    
 
-I will need to go back to the corpus building stage. Either I need to find the way in which multiple txt files are handled properly, or I need to create one massive txt file from all other txt files and use that as the training corpus.
+I will need to go back to the corpus building stage. Either I need to find the way in which multiple txt files are handled properly, or I need to create one massive txt file from all other txt files and use that as the training corpust.
+
+Additionally it appears that I should format the txt documents with one sentence per line in the text extraction step. As mentioned [here on stack overflow](https://stackoverflow.com/questions/53249919/how-to-import-a-document-with-sentences-to-train-a-doc2vec-model)
+
+See heading [corpus streaming - one document at a time](https://radimrehurek.com/gensim/auto_examples/core/run_corpora_and_vector_spaces.html#sphx-glr-auto-examples-core-run-corpora-and-vector-spaces-py). Here it describes how to read from disk, rather than importing into ram and reading from there. Due to this, it explains how to import the document data from txt files and import into a corpus. It still seems though that a corpus has to be one singular file... I'm not seeing yet official documentation for a method or process based around the importing and processing of multiple txt files to one singular corpus. 
 
 
 
