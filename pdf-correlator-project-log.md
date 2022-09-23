@@ -217,6 +217,54 @@ Additionally it appears that I should format the txt documents with one sentence
 
 See heading [corpus streaming - one document at a time](https://radimrehurek.com/gensim/auto_examples/core/run_corpora_and_vector_spaces.html#sphx-glr-auto-examples-core-run-corpora-and-vector-spaces-py). Here it describes how to read from disk, rather than importing into ram and reading from there. Due to this, it explains how to import the document data from txt files and import into a corpus. It still seems though that a corpus has to be one singular file... I'm not seeing yet official documentation for a method or process based around the importing and processing of multiple txt files to one singular corpus. 
 
+By the end of the day successfully extracting, formatting and writting text from pdf files to unique text files, and subsequently compiling into a unified corpus, with sequential tagging for doc2vec.   
+I needed to combine a function and a class from two different code examples:   
+```python
+# this was the code example to most effectively tokenize import a txt file to a corpus
+def read_corpus(fname, tokens_only=False):
+        
+    with smart_open.open(fname, encoding="iso-8859-1") as f:
+        for i, line in enumerate(f):
+            tokens = gensim.utils.simple_preprocess(line)
+            if tokens_only:
+                yield tokens
+            else:
+                yield gensim.models.doc2vec.TaggedDocument(tokens, [i])
+
+# and this was a way I found how to read all files from a directory
+class MySentences(object):
+    def __init__(self, dirname):
+        self.dirname = dirname
+ 
+    def __iter__(self):
+        for fname in os.listdir(self.dirname):
+            for line in open(os.path.join(self.dirname, fname)):
+                yield line.split()
+ 
+sentences = MySentences('/some/directory') # a memory-friendly iterator
+model = gensim.models.Word2Vec(sentences)
+
+
+# combining them became this.
+
+class CorpusGen(object):
+    def __init__(self, dirname):
+        self.dirname = dirname
+ 
+    def __iter__(self, tokens_only=False):
+        for fname in os.listdir(self.dirname):
+            with smart_open.open(fname, encoding="iso-8859-1") as f:
+                for i, line in enumerate(f):
+                    tokens = gensim.utils.simple_preprocess(line)
+                    if tokens_only:
+                        yield tokens
+                    else:
+                        yield gensim.models.doc2vec.TaggedDocument(tokens, [i])
+
+```
+
+The processed text though is however still very messy with a lot of annomalies due to scraping text from pdfs being a bit of a problematic process. Often the PyPDF2 scraper misses spaces, leading to words being joined, 'likethis'. But in the interest of tackling other impending problems, I'm going to just note this and come back to it if there's time. 
+
 
 
 
