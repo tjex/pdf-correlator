@@ -323,6 +323,8 @@ def extract_to_txt():
 Turns out it was Jackie Lai's ACSFUB submission that was breaking PyPDF2, but pdfminer sorted it 😏  
 Actually, the text extraction procedure is simpler with pdfminer, and seeing as though it seems to handle pdfs with less errors in this case, I will choose it over pdfminer next time I think (backed up with other relevant research for the next project).
 
+Getting the the same error as before now, in this case ` ValueError: 2022 not in list error`. I print the list and the value is in the list, so I'm stumped again. While troubleshooting this, I've realised that if I infact want to compare entire pdf's to each other, then I should actually not split the pdf sentences up by lines, and instead have each pdf on one line. doc2vec compares 'documents' which is all text on a singular line in a txt file... damn. 
+
 
 Concept
 Motivation, idea, vision, creative / artistic / technical concept
