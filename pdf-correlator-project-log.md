@@ -263,14 +263,68 @@ class CorpusGen(object):
 
 ```
 
-The processed text though is however still very messy with a lot of annomalies due to scraping text from pdfs being a bit of a problematic process. Often the PyPDF2 scraper misses spaces, leading to words being joined, 'likethis'. But in the interest of tackling other impending problems, I'm going to just note this and come back to it if there's time. 
+The processed text though is however still very messy with a lot of annomalies due to scraping text from pdfs being a bit of a problematic process. Often the PyPDF2 scraper misses spaces, leading to words being joined, 'likethis'. But in the interest of tackling other impending problems, I'm going to just note this and come back to it if there's time.
 
+Did a quick test on the root folder of Zotero's pdf storage directory. Getting an error when iterating through the pages of at least one of the pdfs, where the iterator is out of range. Could there be a file in storage that is blank and therefore has no pages to iterate through?...
 
+### 2022-26-09
 
+Checked my Zotero library in a file browser and found no abnormalities that might suggest a cause for the bug mentioned in the last entry. However, I did see a problem due to the way Zotero manages the same pdf being added to multiple collections. Instead of referencing the original file within other collections (like an alias), Zotero copies the file into another local directory when adding the pdf to another collection.   
+For me this means that the ML model will be getting skewed findings as if the same pdf is added to lots of other collections, the ML model will read the same text multiple times, but think it is unique data. By analyzing similarites in the library then, it will report that there is a bias towards a certain article, when in fact there is only one instance of the article.
+
+I suppose it's partially still valid, as if the user is using the same pdf all over the place, it could be argued that this pdf is being overused - instead of finding extra supporting material. I think it's a better - and more educational route for me - to implemenet a check in the file reading procedure to only read unique file names.
+
+I found the document that was causing the problem. Indeed it was because there were "no pages", but in the sense that it was a scanned pdf, and therefore did not have text programatically embedded in the file. I will either look at OCR extraction or perhaps worst case an error handling, that if no pages can be extracted, to dkip and move on.
+
+### 2022-09-27
+Fixed the 0 page / unreadable error with a try/except process using the pdfminer package as a fallback text extraction option:  
+```python
+def extract_to_txt():
+    os.chdir(txtExtractDir)
+    pat0 = ('(?<!Dr)(?<!Esq)\. +(?=[A-Z])')
+    pat1 = ('\.+(?=[A-Z])')
+    pat2 = ('\.+(?=[0-9])')
+    pat3 = ('\. +(?=[0-9])')
+    pat4 = ('(?=[for a of the and to in])')
+    
+    patterns = [pat0, pat1, pat2, pat3, pat4]
+    counter = 0
+    for i in pdfReaders:
+        counter += 1
+        print(counter)
+        with open(str([i.metadata.title]) + ".txt", 'w', encoding="utf-8") as file:
+            
+            # add doc title to array for reference / tagging
+            docLabels.append(i.metadata.title)
+            print(i.metadata.title)
+            try:
+                for j in range(len(i.pages)):
+                    # format txt file so that each line is one sentence (doc2vec requirement)
+                    text = i.getPage(j).extract_text()
+                    text = re.sub(patterns[0], '.\n', text)
+                    text = re.sub(patterns[1], '.\n', text)
+                    text = re.sub(patterns[2], '.\n', text)
+                    text = re.sub(patterns[3], '.\n', text)
+                    text = re.sub(patterns[4], '', text)
+                    file.write(text)   
+
+                    
+            except Exception as exc:
+                    print(">>>>> exception")
+                    # format txt file so that each line is one sentence (doc2vec requirement)
+                    text = fallback_text_extraction(rootDir + "/" + pdfFiles[counter])
+                    text = re.sub(patterns[0], '.\n', text)
+                    text = re.sub(patterns[1], '.\n', text)
+                    text = re.sub(patterns[2], '.\n', text)
+                    text = re.sub(patterns[3], '.\n', text)
+                    text = re.sub(patterns[4], '', text)
+                    file.write(text)
+```
+Turns out it was Jackie Lai's ACSFUB submission that was breaking PyPDF2, but pdfminer sorted it 😏  
+Actually, the text extraction procedure is simpler with pdfminer, and seeing as though it seems to handle pdfs with less errors in this case, I will choose it over pdfminer next time I think (backed up with other relevant research for the next project).
 
 
 Concept
-
 Motivation, idea, vision, creative / artistic / technical concept
 Implementation
 
