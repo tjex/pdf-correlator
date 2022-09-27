@@ -286,14 +286,14 @@ def extract_to_txt():
     pat2 = ('\.+(?=[0-9])')
     pat3 = ('\. +(?=[0-9])')
     pat4 = ('(?=[for a of the and to in])')
-    
+
     patterns = [pat0, pat1, pat2, pat3, pat4]
     counter = 0
     for i in pdfReaders:
         counter += 1
         print(counter)
         with open(str([i.metadata.title]) + ".txt", 'w', encoding="utf-8") as file:
-            
+
             # add doc title to array for reference / tagging
             docLabels.append(i.metadata.title)
             print(i.metadata.title)
@@ -306,9 +306,9 @@ def extract_to_txt():
                     text = re.sub(patterns[2], '.\n', text)
                     text = re.sub(patterns[3], '.\n', text)
                     text = re.sub(patterns[4], '', text)
-                    file.write(text)   
+                    file.write(text)
 
-                    
+
             except Exception as exc:
                     print(">>>>> exception")
                     # format txt file so that each line is one sentence (doc2vec requirement)
@@ -323,7 +323,9 @@ def extract_to_txt():
 Turns out it was Jackie Lai's ACSFUB submission that was breaking PyPDF2, but pdfminer sorted it 😏  
 Actually, the text extraction procedure is simpler with pdfminer, and seeing as though it seems to handle pdfs with less errors in this case, I will choose it over pdfminer next time I think (backed up with other relevant research for the next project).
 
-Getting the the same error as before now, in this case ` ValueError: 2022 not in list error`. I print the list and the value is in the list, so I'm stumped again. While troubleshooting this, I've realised that if I infact want to compare entire pdf's to each other, then I should actually not split the pdf sentences up by lines, and instead have each pdf on one line. doc2vec compares 'documents' which is all text on a singular line in a txt file... damn. 
+Writing all text from a pdf to one continuous string, is proving difficult. At the moment, using pdfminer with the `extract_text_to_fp` function, which extracts all text as one string - but I can't access that string! Following tutorials and stackoverflow precisely and getting `AttributeError: '_io.StringIO' object has no attribute 'getValue'`. Hoping it's not a python3.10 issue...
+
+Spent some good hours trying to troubleshoot this to no avail. It really just feels like there is a bug in the pdfminer package, as every example I see uses a very simple method call of `.getValue()`. Have since moved on to using PyPDF2 again with an error handling to catch pdf's that it can't manage. 
 
 
 Concept
