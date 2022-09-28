@@ -272,6 +272,8 @@ Did a quick test on the root folder of Zotero's pdf storage directory. Getting a
 Checked my Zotero library in a file browser and found no abnormalities that might suggest a cause for the bug mentioned in the last entry. However, I did see a problem due to the way Zotero manages the same pdf being added to multiple collections. Instead of referencing the original file within other collections (like an alias), Zotero copies the file into another local directory when adding the pdf to another collection.   
 For me this means that the ML model will be getting skewed findings as if the same pdf is added to lots of other collections, the ML model will read the same text multiple times, but think it is unique data. By analyzing similarites in the library then, it will report that there is a bias towards a certain article, when in fact there is only one instance of the article.
 
+> edit from the future: this was handled automatically (accidentally). Because the script iterates through the pdf metadata name and uses it to create a text document by the same title, every time the iteration reaches a duplicate pdf in the `pdfReaders` array, it simply overwrites the text file of the same name 🕺
+
 I suppose it's partially still valid, as if the user is using the same pdf all over the place, it could be argued that this pdf is being overused - instead of finding extra supporting material. I think it's a better - and more educational route for me - to implemenet a check in the file reading procedure to only read unique file names.
 
 I found the document that was causing the problem. Indeed it was because there were "no pages", but in the sense that it was a scanned pdf, and therefore did not have text programatically embedded in the file. I will either look at OCR extraction or perhaps worst case an error handling, that if no pages can be extracted, to dkip and move on.
@@ -338,6 +340,11 @@ Finalised the python script which trains and assesses a doc2vec model.
 The other option I'm thinking to continue with the project for now is to make the python script interactive, so that anyone can run it on their own source of pdf files and see the similarity between the documents they already have, rather than between all their documents and an incoming document. 
 
 Although through this process I could infact achieve the end goal. If I set up a vector visualisation of the full corpus, then the user could add a new pdf in and see where it resides on a vector graph visualisation, compared to the rest of the corpus.
+
+[good jupyter notebook on doc2vec + tensorboard](https://nbviewer.org/github/RaRe-Technologies/gensim/blob/8f7c9ff4c546f84d42c220dcf28543500747c171/docs/notebooks/Tensorboard_visualizations.ipynb#Training-the-Doc2Vec-Model)
+
+Generated and formated files for tensor properly, but there is a missmatch between amount of vectors and amount of metadata tags.
+
 
 # Concept
 
