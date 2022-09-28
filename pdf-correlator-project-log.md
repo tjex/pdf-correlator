@@ -343,7 +343,8 @@ Although through this process I could infact achieve the end goal. If I set up a
 
 [good jupyter notebook on doc2vec + tensorboard](https://nbviewer.org/github/RaRe-Technologies/gensim/blob/8f7c9ff4c546f84d42c220dcf28543500747c171/docs/notebooks/Tensorboard_visualizations.ipynb#Training-the-Doc2Vec-Model)
 
-Generated and formated files for tensor properly, but there is a missmatch between amount of vectors and amount of metadata tags.
+Generated and formated files for tensor properly, but there is a missmatch between amount of vectors and amount of metadata tags. Fixed, was because of the table heading in id metadata.   
+![visualisation of the similarity between pdfs in my zotero library!](./media/tensorboard.png)
 
 
 # Concept
@@ -363,6 +364,6 @@ Generated and formated files for tensor properly, but there is a missmatch betwe
 - I don't like formating code blocks without curly braces! 
 - look at multiple sollutions online before trying one
 - putting an incremented variable (ie a counter) inside [], and using it as variable in a function, makes it an iterable object ("see generate a training corpus" section of the code)
-
+- people give no attention to the metadata titles in their pdfs...
 
 
