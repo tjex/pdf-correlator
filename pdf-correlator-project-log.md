@@ -323,21 +323,39 @@ def extract_to_txt():
 Turns out it was Jackie Lai's ACSFUB submission that was breaking PyPDF2, but pdfminer sorted it 😏
 Actually, the text extraction procedure is simpler with pdfminer, and seeing as though it seems to handle pdfs with less errors in this case, I will choose it over pdfminer next time I think (backed up with other relevant research for the next project).
 
+It occured to me that the way I'm processing the text data is not in line with my specific end goal of comparing whole pdfs to each other.   
+As doc2vec considers one line in a text file to be one full "document", I shouldn't be splitting the text onto new lines by their sentences (which is what the above code does). 
+
 Writing all text from a pdf to one continuous string, is proving difficult. At the moment, using pdfminer with the `extract_text_to_fp` function, which extracts all text as one string - but I can't access that string! Following tutorials and stackoverflow precisely and getting AttributeError: 'io.StringIO' object has no attribute 'getValue'. Hoping it's not a python3.10 issue...
 
 Spent some good hours trying to troubleshoot this to no avail. It really just feels like there is a bug in the pdfminer package, as every example I see uses a very simple method call of .getValue(). Have since moved on to using PyPDF2 again with an error handling to catch pdf's that it can't manage.
 
+### 2022-09-28
+Managed to get all words to one line done. 
 
-Concept
+Finalised the python script which trains and assesses a doc2vec model.   
+[I've just unfortunately read](https://stackoverflow.com/questions/57729961/can-gensim-doc2vec-be-used-to-compare-a-novel-document-to-a-trained-model) that there is no built in function to compare a new document to a trained model. In that stackover flow post however, gojomo confirms a potential half sollution, which I will try.   
+The other option I'm thinking to continue with the project for now is to make the python script interactive, so that anyone can run it on their own source of pdf files and see the similarity between the documents they already have, rather than between all their documents and an incoming document. 
 
-Motivation, idea, vision, creative / artistic / technical concept
-Implementation
+Although through this process I could infact achieve the end goal. If I set up a vector visualisation of the full corpus, then the user could add a new pdf in and see where it resides on a vector graph visualisation, compared to the rest of the corpus.
 
-How did you do it? Pipeline, execution details, etc.
-Results
+# Concept
 
-Documentation of your result(s), e.g. images.
-Project Reflection & Discussion
+## Motivation, idea, vision, creative / artistic / technical concept
+## Implementation
 
-What worked well, what didn't work and why? In which context does your project stand? Future Work?
-Lessons Learned
+## How did you do it? Pipeline, execution details, etc.
+## Results
+
+## Documentation of your result(s), e.g. images.
+## Project Reflection & Discussion
+
+## What worked well, what didn't work and why? In which context does your project stand? Future Work?
+## Lessons Learned
+- going to the source of the library (homepage, repo, etc) before looking at user tutorials, while more confonting and difficult, is more efficient in the long run (and you learn more)
+- I don't like formating code blocks without curly braces! 
+- look at multiple sollutions online before trying one
+- putting an incremented variable (ie a counter) inside [], and using it as variable in a function, makes it an iterable object ("see generate a training corpus" section of the code)
+
+
+
