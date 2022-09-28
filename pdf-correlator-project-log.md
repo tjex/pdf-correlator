@@ -277,7 +277,7 @@ I suppose it's partially still valid, as if the user is using the same pdf all o
 I found the document that was causing the problem. Indeed it was because there were "no pages", but in the sense that it was a scanned pdf, and therefore did not have text programatically embedded in the file. I will either look at OCR extraction or perhaps worst case an error handling, that if no pages can be extracted, to dkip and move on.
 
 ### 2022-09-27
-Fixed the 0 page / unreadable error with a try/except process using the pdfminer package as a fallback text extraction option:  
+Fixed the 0 page / unreadable error with a try/except process using the pdfminer package as a fallback text extraction option:
 ```python
 def extract_to_txt():
     os.chdir(txtExtractDir)
@@ -320,15 +320,16 @@ def extract_to_txt():
                     text = re.sub(patterns[4], '', text)
                     file.write(text)
 ```
-Turns out it was Jackie Lai's ACSFUB submission that was breaking PyPDF2, but pdfminer sorted it 😏  
+Turns out it was Jackie Lai's ACSFUB submission that was breaking PyPDF2, but pdfminer sorted it 😏
 Actually, the text extraction procedure is simpler with pdfminer, and seeing as though it seems to handle pdfs with less errors in this case, I will choose it over pdfminer next time I think (backed up with other relevant research for the next project).
 
-Writing all text from a pdf to one continuous string, is proving difficult. At the moment, using pdfminer with the `extract_text_to_fp` function, which extracts all text as one string - but I can't access that string! Following tutorials and stackoverflow precisely and getting `AttributeError: '_io.StringIO' object has no attribute 'getValue'`. Hoping it's not a python3.10 issue...
+Writing all text from a pdf to one continuous string, is proving difficult. At the moment, using pdfminer with the `extract_text_to_fp` function, which extracts all text as one string - but I can't access that string! Following tutorials and stackoverflow precisely and getting AttributeError: 'io.StringIO' object has no attribute 'getValue'. Hoping it's not a python3.10 issue...
 
-Spent some good hours trying to troubleshoot this to no avail. It really just feels like there is a bug in the pdfminer package, as every example I see uses a very simple method call of `.getValue()`. Have since moved on to using PyPDF2 again with an error handling to catch pdf's that it can't manage. 
+Spent some good hours trying to troubleshoot this to no avail. It really just feels like there is a bug in the pdfminer package, as every example I see uses a very simple method call of .getValue(). Have since moved on to using PyPDF2 again with an error handling to catch pdf's that it can't manage.
 
 
 Concept
+
 Motivation, idea, vision, creative / artistic / technical concept
 Implementation
 
