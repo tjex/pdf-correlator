@@ -134,7 +134,7 @@ model.train(trainCorpus, total_examples=model.corpus_count, epochs=model.epochs)
 # generate and format data files for tensorboard visualisation
 os.chdir(modelDataDir)
 model.save_word2vec_format('doc_tensor.w2v', doctag_vec=True, word_vec=False)
-get_ipython().run_line_magic('run', '../scripts/word2vec2tensor.py -i doc_tensor.w2v -o pdf_plot')
+python -m gensim.scripts.word2vec2tensor -i doc_tensor.w2v -o pdf_plot
 
 text = ""    
 with open('pdf_plot_metadata.tsv', 'w') as file:
