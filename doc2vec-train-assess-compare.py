@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[35]:
 
 
 # coding: utf-8
@@ -26,6 +26,7 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=lo
 rootDir = "/Users/tillman/t-root/dev/projects/2022/pdf-correlator/gitignored"
 txtExtractDir = rootDir + '/txt-extractions'
 modelDataDir = rootDir + '/model-data'
+testsDir = rootDir + '/tests'
 zoteroDir = '/Users/tillman/t-root/zotero/storage'
 
 
@@ -129,7 +130,7 @@ trainCorpus = list(CorpusGen('/Users/tillman/t-root/dev/projects/2022/pdf-correl
 
 
 # save the entire corpus to a txt file
-with open(modelDataDir + "/" + "train-corpus.txt", 'w') as file:
+with open(modelDataDir + "/train-corpus.txt", 'w') as file:
     file.write(str(trainCorpus))
 
 
@@ -167,23 +168,14 @@ with open('pdf_plot_metadata.tsv', 'w') as file:
         
 
 
-# In[9]:
+# In[41]:
 
 
 # word occurence check
 checkWord = "internet"
-print("\"" + str(checkWord) + "\"" + " appears this many times in corpus:")
+print("\"" + str(checkWord) + "\"" + " appears this many times in corpus:") 
 print({model.wv.get_vecattr(checkWord, 'count')})
 print()
-
-
-# In[10]:
-
-
-# infer a vector from corupus (I dont actually know (yet) what this means or does! :D )
-print("infering a default vector")
-print()
-vector = model.infer_vector(['only', 'you', 'can', 'prevent', 'forest', 'fires'])
 
 
 # In[28]:
@@ -213,21 +205,21 @@ print('###### PART 2 - CHECK SIMILARITY BETWEEN CORPUS AND INCOMING DOCUMENT ###
 print()
 
 
-# In[32]:
+# In[37]:
 
 
 # import new document
 
 print('importing latin pdf')
-with smart_open.open(rootDir + '/testing/similarity-test.txt', 'w') as test:
-    text = pdfminer_extraction(rootDir + '/testing/latin.pdf')
+with smart_open.open(testsDir + '/similarity-test.txt', 'w') as test:
+    text = pdfminer_extraction(testsDir + '/latin.pdf')
     text = "".join(line.strip("\n") for line in text) 
     test.write(text)
     
 print()
 
 
-# In[33]:
+# In[38]:
 
 
 # tokenize and tag new document
@@ -242,12 +234,12 @@ def read_text(fname, tokens_only=False):
                 # For training data, add tags
                 yield gensim.models.doc2vec.TaggedDocument(tokens, [i])
                 
-similarityTest = list(read_text(rootDir + '/testing/similarity-test.txt'))
+similarityTest = list(read_text(testsDir + '/similarity-test.txt'))
 
 print()
 
 
-# In[34]:
+# In[39]:
 
 
 # check for similarity against the entire corpus
