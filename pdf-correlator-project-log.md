@@ -346,24 +346,12 @@ Although through this process I could infact achieve the end goal. If I set up a
 Generated and formated files for tensor properly, but there is a missmatch between amount of vectors and amount of metadata tags. Fixed, was because of the table heading in id metadata.   
 ![visualisation of the similarity between pdfs in my zotero library!](./media/tensorboard.png)
 
+### 2022-09-29
+Implemented the similarity test sollution from the above stack overflow link, which checks for similarity between the entire model and a singular incoming pdf (ie not in the corpus already). 
 
-# Concept
-
-## Motivation, idea, vision, creative / artistic / technical concept
-## Implementation
-
-## How did you do it? Pipeline, execution details, etc.
-## Results
-
-## Documentation of your result(s), e.g. images.
-## Project Reflection & Discussion
-
-## What worked well, what didn't work and why? In which context does your project stand? Future Work?
-## Lessons Learned
-- going to the source of the library (homepage, repo, etc) before looking at user tutorials, while more confonting and difficult, is more efficient in the long run (and you learn more)
-- I don't like formating code blocks without curly braces! 
-- look at multiple sollutions online before trying one
-- putting an incremented variable (ie a counter) inside [], and using it as variable in a function, makes it an iterable object ("see generate a training corpus" section of the code)
-- people give no attention to the metadata titles in their pdfs...
-
+As it's stated on the Gensim website, with a corpus size so low, statistical results are fairly innacurate. But to test this similarity sollution, I used two test pdfs. One was a lengthy file of generated latin text, the other was a pdf from Bundestag.de, which was in German (none of the pdfs in my corpus are in German). I did a quasi 'self-similarity' test by also feeding in what the model thinks are new pdfs, but are in fact pdfs that the model has already been trained on.   
+The similarity results were as followed:
+1. Latin pdf: 1% similar to corpus
+2. German pdf: 2% similar to corpus
+3. Identical pdfs from corpus: on average 85% similar to corpus 
 
