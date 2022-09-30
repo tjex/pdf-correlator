@@ -39,3 +39,5 @@ dependencies (version used):
 
 If you just want to use this script as is, you just need to install the above dependancies and change the `pdfReadRootDir` to a folder from which you'd like to pull in pdfs (eg the root directory of your Zotero library).
 
+If you are running from a terminal, be sure to invoke the script with `ipython3` instead of `python3`, as `ipython3` is required for a script call when generating the .tsv files for tensorboard.
+
