@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "code",
-   "execution_count": null,
+   "execution_count": 1,
    "id": "717c71de",
    "metadata": {},
    "outputs": [],
@@ -31,7 +31,7 @@
     "rootDir = \"/Users/tillman/t-root/dev/projects/2022/pdf-correlator/gitignored\"\n",
     "txtExtractDir = rootDir + '/txt-extractions'\n",
     "modelDataDir = rootDir + '/model-data'\n",
-    "testsDir = rootDir + '/tests'\n",
+    "testsDir = '/Users/tillman/t-root/dev/projects/2022/pdf-correlator/tests'\n",
     "zoteroDir = '/Users/tillman/t-root/zotero/storage'\n",
     "\n",
     "\n",
@@ -50,7 +50,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "980957ad",
+   "id": "83d7d1c0",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -59,16 +59,27 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
+   "execution_count": 4,
    "id": "9ba894b6",
    "metadata": {},
-   "outputs": [],
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "reading pdfs in/Users/tillman/t-root/dev/projects/2022/pdf-correlator/gitignored (including subdirectories)\n",
+      "\u001b[91merror: pdf-tests/subdirectory/Simeone et al_2018_Arts and design as translational mechanisms for academic entrepreneurship.pdf is unreadable by glob.glob. Skipping file\u001b[0m\n",
+      "\u001b[92mpdf files read\u001b[0m\n",
+      "\n"
+     ]
+    }
+   ],
    "source": [
     "# read files\n",
     "print(\"reading pdfs in\" + str(rootDir) + \" (including subdirectories)\")\n",
     "def read_files():\n",
     "    os.chdir(rootDir)\n",
-    "    for file in glob.glob(\"**/*.pdf\"):\n",
+    "    for file in glob.glob(\"**/*.pdf\", recursive=True):\n",
     "        try:\n",
     "            pdfFiles.append(file)\n",
     "            pdfReaders.append(PdfReader(file))\n",
@@ -150,7 +161,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "9b4494fc",
+   "id": "ac3794c2",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -252,7 +263,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "50cfb5c1",
+   "id": "9859964b",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -270,7 +281,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "540252ad",
+   "id": "5cc75ca2",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -294,7 +305,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "53e40139",
+   "id": "185356d8",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -313,7 +324,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "1eee1e0c",
+   "id": "f5922ec9",
    "metadata": {},
    "outputs": [],
    "source": []

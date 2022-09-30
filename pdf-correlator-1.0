@@ -1,0 +1,506 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "717c71de",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# pdf-correlator by Tillman Jex\n",
+    "# github.com/tjex\n",
+    "# tillmanjex@mailbox.org\n",
+    "\n",
+    "import os, glob, re, io, random, gensim, smart_open, logging, collections\n",
+    "import numpy as np\n",
+    "import pandas as pd\n",
+    "\n",
+    "from PyPDF2 import PdfReader\n",
+    "from pdfminer.high_level import extract_text as pdfminer_extraction\n",
+    "from pdfminer.high_level import extract_text_to_fp\n",
+    "from pdfminer.layout import LAParams\n",
+    "from gensim.models.doc2vec import Doc2Vec, TaggedDocument\n",
+    "from gensim.test.utils import get_tmpfile\n",
+    "from nltk.tokenize import word_tokenize\n",
+    "\n",
+    "pdfReaders = []\n",
+    "pdfFiles = []\n",
+    "docLabels = []\n",
+    "\n",
+    "logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)\n",
+    "rootDir = \"/Users/tillman/t-root/dev/projects/2022/pdf-correlator/gitignored\"\n",
+    "txtExtractDir = rootDir + '/txt-extractions'\n",
+    "modelDataDir = rootDir + '/model-data'\n",
+    "testsDir = '/Users/tillman/t-root/dev/projects/2022/pdf-correlator/tests'\n",
+    "zoteroDir = '/Users/tillman/t-root/zotero/storage'\n",
+    "\n",
+    "\n",
+    "class bcolors:\n",
+    "    HEADER = '\\033[95m'\n",
+    "    OKBLUE = '\\033[94m'\n",
+    "    OKCYAN = '\\033[96m'\n",
+    "    OKGREEN = '\\033[92m'\n",
+    "    WARNING = '\\033[93m'\n",
+    "    FAIL = '\\033[91m'\n",
+    "    ENDC = '\\033[0m'\n",
+    "    BOLD = '\\033[1m'\n",
+    "    UNDERLINE = '\\033[4m'"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "5ff18c04",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "###### PART 1 - READ, EXTRACT, TRAIN AND ASSESS ######"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "9ba894b6",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "reading pdfs in/Users/tillman/t-root/dev/projects/2022/pdf-correlator/gitignored (including subdirectories)\n",
+      "\u001b[91merror: pdf-tests/subdirectory/Simeone et al_2018_Arts and design as translational mechanisms for academic entrepreneurship.pdf is unreadable by glob.glob. Skipping file\u001b[0m\n",
+      "\u001b[92mpdf files read\u001b[0m\n",
+      "\n"
+     ]
+    }
+   ],
+   "source": [
+    "# read files\n",
+    "print(\"reading pdfs in\" + str(rootDir) + \" (including subdirectories)\")\n",
+    "def read_files():\n",
+    "    os.chdir(rootDir)\n",
+    "    for file in glob.glob(\"**/*.pdf\", recursive=True):\n",
+    "        try:\n",
+    "            pdfFiles.append(file)\n",
+    "            pdfReaders.append(PdfReader(file))\n",
+    "        except:\n",
+    "            print(bcolors.FAIL + \"error: \" + file + \" is unreadable by glob.glob. Skipping file\" + bcolors.ENDC)\n",
+    "    print(bcolors.OKGREEN + \"pdf files read\" + bcolors.ENDC)\n",
+    "    print()\n",
+    "read_files()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "84ffcb43",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Extracting pdfs to text files (duplicate pdfs are handled automagically)\n",
+      "\u001b[91merror: \"None\" not extractable with PyPDF2, trying with pdfminer\u001b[0m\n",
+      "\n",
+      "\u001b[92mpdf extraction complete\u001b[0m\n"
+     ]
+    }
+   ],
+   "source": [
+    "# extract text from pdfs to designated directory and save as txt files.\n",
+    "def extract_to_txt():\n",
+    "    print(\"Extracting pdfs to text files (duplicate pdfs are handled automagically)\")\n",
+    "    os.chdir(txtExtractDir)\n",
+    "    counter = 0\n",
+    "    text = \"\"\n",
+    "    for i in pdfReaders:\n",
+    "        counter += 1\n",
+    "        with open(str([i.metadata.title]) + \".txt\", 'w', encoding=\"utf-8\") as file:\n",
+    "      \n",
+    "            # add doc title to array for reference / tagging\n",
+    "            docLabels.append(i.metadata.title)\n",
+    "            try:\n",
+    "                for j in range(len(i.pages)):\n",
+    "                    # format txt file so that each document is one one line (doc2vec requirement)\n",
+    "                    text += i.getPage(j).extract_text()\n",
+    "                    text = \"\".join(line.strip(\"\\n\") for line in text)  \n",
+    "\n",
+    "                \n",
+    "                    \n",
+    "            except Exception as exc:\n",
+    "                print(bcolors.FAIL + \"error: \" + \"\\\"\" + str(i.metadata.title) + \"\\\"\" + \" not extractable with PyPDF2, trying with pdfminer\" + bcolors.ENDC)\n",
+    "                print()\n",
+    "                # format txt file so that each document is one one line (doc2vec requirement)\n",
+    "                text += pdfminer_extraction(rootDir + \"/\" + pdfFiles[counter])\n",
+    "                text = \"\".join(line.strip(\"\\n\") for line in text)     \n",
+    "                \n",
+    " \n",
+    "            file.write(text)\n",
+    "    print(bcolors.OKGREEN + \"pdf extraction complete\" + bcolors.ENDC)\n",
+    "extract_to_txt()\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "1264dcf5",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# generate a training corpus from all txt files found in designated directory\n",
+    "class CorpusGen(object):\n",
+    "    def __init__(self, dirname):\n",
+    "        self.dirname = dirname\n",
+    "\n",
+    "    def __iter__(self, tokens_only=False):\n",
+    "        counter = 0\n",
+    "        for fname in os.listdir(self.dirname):\n",
+    "            \n",
+    "            with smart_open.open(fname, encoding=\"iso-8859-1\") as f:\n",
+    "                for i, line in enumerate(f):\n",
+    "                    tokens = gensim.utils.simple_preprocess(line, min_len=3, max_len=20, deacc=True)\n",
+    "                    if tokens_only:\n",
+    "                        yield tokens\n",
+    "                    else:\n",
+    "                        yield gensim.models.doc2vec.TaggedDocument(tokens, [counter])\n",
+    "            counter += 1\n",
+    "        \n",
+    "trainCorpus = list(CorpusGen('/Users/tillman/t-root/dev/projects/2022/pdf-correlator/gitignored/txt-extractions'))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "dffda0f3",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# save the entire corpus to a txt file\n",
+    "with open(modelDataDir + \"/train-corpus.txt\", 'w') as file:\n",
+    "    file.write(str(trainCorpus))\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "f5d4ef00",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2022-09-29 19:19:47,391 : INFO : Doc2Vec lifecycle event {'params': 'Doc2Vec<dm/m,d50,n5,w5,mc2,s0.001,t3>', 'datetime': '2022-09-29T19:19:47.389656', 'gensim': '4.2.0', 'python': '3.10.6 | packaged by conda-forge | (main, Aug 22 2022, 20:41:22) [Clang 13.0.1 ]', 'platform': 'macOS-12.0.1-arm64-arm-64bit', 'event': 'created'}\n",
+      "2022-09-29 19:19:47,397 : INFO : collecting all words and their counts\n",
+      "2022-09-29 19:19:47,398 : INFO : PROGRESS: at example #0, processed 0 words (0 words/s), 0 word types, 0 tags\n",
+      "2022-09-29 19:19:47,480 : INFO : collected 13122 word types and 12 unique tags from a corpus of 12 examples and 669596 words\n",
+      "2022-09-29 19:19:47,480 : INFO : Creating a fresh vocabulary\n",
+      "2022-09-29 19:19:47,501 : INFO : Doc2Vec lifecycle event {'msg': 'effective_min_count=2 retains 12698 unique words (96.77% of original 13122, drops 424)', 'datetime': '2022-09-29T19:19:47.501226', 'gensim': '4.2.0', 'python': '3.10.6 | packaged by conda-forge | (main, Aug 22 2022, 20:41:22) [Clang 13.0.1 ]', 'platform': 'macOS-12.0.1-arm64-arm-64bit', 'event': 'prepare_vocab'}\n",
+      "2022-09-29 19:19:47,501 : INFO : Doc2Vec lifecycle event {'msg': 'effective_min_count=2 leaves 669172 word corpus (99.94% of original 669596, drops 424)', 'datetime': '2022-09-29T19:19:47.501732', 'gensim': '4.2.0', 'python': '3.10.6 | packaged by conda-forge | (main, Aug 22 2022, 20:41:22) [Clang 13.0.1 ]', 'platform': 'macOS-12.0.1-arm64-arm-64bit', 'event': 'prepare_vocab'}\n",
+      "2022-09-29 19:19:47,527 : INFO : deleting the raw counts dictionary of 13122 items\n",
+      "2022-09-29 19:19:47,528 : INFO : sample=0.001 downsamples 35 most-common words\n",
+      "2022-09-29 19:19:47,528 : INFO : Doc2Vec lifecycle event {'msg': 'downsampling leaves estimated 579202.6031504513 word corpus (86.6%% of prior 669172)', 'datetime': '2022-09-29T19:19:47.528657', 'gensim': '4.2.0', 'python': '3.10.6 | packaged by conda-forge | (main, Aug 22 2022, 20:41:22) [Clang 13.0.1 ]', 'platform': 'macOS-12.0.1-arm64-arm-64bit', 'event': 'prepare_vocab'}\n",
+      "2022-09-29 19:19:47,571 : INFO : estimated required memory for 12698 words and 50 dimensions: 11433000 bytes\n",
+      "2022-09-29 19:19:47,571 : INFO : resetting layer weights\n",
+      "2022-09-29 19:19:47,574 : INFO : Doc2Vec lifecycle event {'msg': 'training model with 3 workers on 12698 vocabulary and 50 features, using sg=0 hs=0 sample=0.001 negative=5 window=5 shrink_windows=True', 'datetime': '2022-09-29T19:19:47.574257', 'gensim': '4.2.0', 'python': '3.10.6 | packaged by conda-forge | (main, Aug 22 2022, 20:41:22) [Clang 13.0.1 ]', 'platform': 'macOS-12.0.1-arm64-arm-64bit', 'event': 'train'}\n",
+      "2022-09-29 19:19:47,627 : INFO : EPOCH 0: training on 669596 raw words (104555 effective words) took 0.1s, 1995205 effective words/s\n",
+      "2022-09-29 19:19:47,682 : INFO : EPOCH 1: training on 669596 raw words (104553 effective words) took 0.1s, 1983398 effective words/s\n",
+      "2022-09-29 19:19:47,736 : INFO : EPOCH 2: training on 669596 raw words (104558 effective words) took 0.1s, 2016807 effective words/s\n",
+      "2022-09-29 19:19:47,790 : INFO : EPOCH 3: training on 669596 raw words (104523 effective words) took 0.1s, 1985046 effective words/s\n",
+      "2022-09-29 19:19:47,844 : INFO : EPOCH 4: training on 669596 raw words (104557 effective words) took 0.1s, 2006615 effective words/s\n",
+      "2022-09-29 19:19:47,898 : INFO : EPOCH 5: training on 669596 raw words (104535 effective words) took 0.1s, 2020524 effective words/s\n",
+      "2022-09-29 19:19:47,950 : INFO : EPOCH 6: training on 669596 raw words (104576 effective words) took 0.1s, 2064137 effective words/s\n",
+      "2022-09-29 19:19:48,004 : INFO : EPOCH 7: training on 669596 raw words (104544 effective words) took 0.1s, 2024391 effective words/s\n",
+      "2022-09-29 19:19:48,054 : INFO : EPOCH 8: training on 669596 raw words (104524 effective words) took 0.0s, 2164422 effective words/s\n",
+      "2022-09-29 19:19:48,108 : INFO : EPOCH 9: training on 669596 raw words (104541 effective words) took 0.1s, 2032053 effective words/s\n",
+      "2022-09-29 19:19:48,162 : INFO : EPOCH 10: training on 669596 raw words (104543 effective words) took 0.1s, 2009513 effective words/s\n",
+      "2022-09-29 19:19:48,213 : INFO : EPOCH 11: training on 669596 raw words (104552 effective words) took 0.1s, 2090108 effective words/s\n",
+      "2022-09-29 19:19:48,265 : INFO : EPOCH 12: training on 669596 raw words (104541 effective words) took 0.0s, 2098179 effective words/s\n",
+      "2022-09-29 19:19:48,316 : INFO : EPOCH 13: training on 669596 raw words (104536 effective words) took 0.0s, 2163066 effective words/s\n",
+      "2022-09-29 19:19:48,366 : INFO : EPOCH 14: training on 669596 raw words (104528 effective words) took 0.0s, 2216725 effective words/s\n",
+      "2022-09-29 19:19:48,414 : INFO : EPOCH 15: training on 669596 raw words (104564 effective words) took 0.0s, 2307513 effective words/s\n",
+      "2022-09-29 19:19:48,465 : INFO : EPOCH 16: training on 669596 raw words (104529 effective words) took 0.1s, 2089271 effective words/s\n",
+      "2022-09-29 19:19:48,513 : INFO : EPOCH 17: training on 669596 raw words (104560 effective words) took 0.0s, 2265680 effective words/s\n",
+      "2022-09-29 19:19:48,563 : INFO : EPOCH 18: training on 669596 raw words (104567 effective words) took 0.0s, 2191811 effective words/s\n",
+      "2022-09-29 19:19:48,612 : INFO : EPOCH 19: training on 669596 raw words (104548 effective words) took 0.0s, 2200756 effective words/s\n",
+      "2022-09-29 19:19:48,659 : INFO : EPOCH 20: training on 669596 raw words (104563 effective words) took 0.0s, 2328923 effective words/s\n",
+      "2022-09-29 19:19:48,705 : INFO : EPOCH 21: training on 669596 raw words (104517 effective words) took 0.0s, 2351786 effective words/s\n",
+      "2022-09-29 19:19:48,752 : INFO : EPOCH 22: training on 669596 raw words (104543 effective words) took 0.0s, 2340017 effective words/s\n",
+      "2022-09-29 19:19:48,801 : INFO : EPOCH 23: training on 669596 raw words (104549 effective words) took 0.0s, 2281314 effective words/s\n",
+      "2022-09-29 19:19:48,847 : INFO : EPOCH 24: training on 669596 raw words (104516 effective words) took 0.0s, 2294028 effective words/s\n",
+      "2022-09-29 19:19:48,895 : INFO : EPOCH 25: training on 669596 raw words (104567 effective words) took 0.0s, 2239987 effective words/s\n",
+      "2022-09-29 19:19:48,942 : INFO : EPOCH 26: training on 669596 raw words (104555 effective words) took 0.0s, 2266654 effective words/s\n",
+      "2022-09-29 19:19:48,990 : INFO : EPOCH 27: training on 669596 raw words (104521 effective words) took 0.0s, 2262712 effective words/s\n",
+      "2022-09-29 19:19:49,038 : INFO : EPOCH 28: training on 669596 raw words (104538 effective words) took 0.0s, 2283969 effective words/s\n",
+      "2022-09-29 19:19:49,086 : INFO : EPOCH 29: training on 669596 raw words (104567 effective words) took 0.0s, 2258946 effective words/s\n",
+      "2022-09-29 19:19:49,135 : INFO : EPOCH 30: training on 669596 raw words (104540 effective words) took 0.0s, 2218257 effective words/s\n",
+      "2022-09-29 19:19:49,180 : INFO : EPOCH 31: training on 669596 raw words (104506 effective words) took 0.0s, 2476233 effective words/s\n",
+      "2022-09-29 19:19:49,226 : INFO : EPOCH 32: training on 669596 raw words (104529 effective words) took 0.0s, 2391061 effective words/s\n",
+      "2022-09-29 19:19:49,274 : INFO : EPOCH 33: training on 669596 raw words (104541 effective words) took 0.0s, 2300140 effective words/s\n",
+      "2022-09-29 19:19:49,319 : INFO : EPOCH 34: training on 669596 raw words (104520 effective words) took 0.0s, 2388449 effective words/s\n",
+      "2022-09-29 19:19:49,365 : INFO : EPOCH 35: training on 669596 raw words (104540 effective words) took 0.0s, 2339298 effective words/s\n",
+      "2022-09-29 19:19:49,411 : INFO : EPOCH 36: training on 669596 raw words (104565 effective words) took 0.0s, 2360120 effective words/s\n",
+      "2022-09-29 19:19:49,458 : INFO : EPOCH 37: training on 669596 raw words (104548 effective words) took 0.0s, 2345670 effective words/s\n",
+      "2022-09-29 19:19:49,505 : INFO : EPOCH 38: training on 669596 raw words (104579 effective words) took 0.0s, 2341845 effective words/s\n",
+      "2022-09-29 19:19:49,551 : INFO : EPOCH 39: training on 669596 raw words (104536 effective words) took 0.0s, 2314627 effective words/s\n",
+      "2022-09-29 19:19:49,551 : INFO : Doc2Vec lifecycle event {'msg': 'training on 26783840 raw words (4181774 effective words) took 2.0s, 2115014 effective words/s', 'datetime': '2022-09-29T19:19:49.551750', 'gensim': '4.2.0', 'python': '3.10.6 | packaged by conda-forge | (main, Aug 22 2022, 20:41:22) [Clang 13.0.1 ]', 'platform': 'macOS-12.0.1-arm64-arm-64bit', 'event': 'train'}\n"
+     ]
+    }
+   ],
+   "source": [
+    "# establish a model and build the vocab\n",
+    "model = gensim.models.doc2vec.Doc2Vec(vector_size=50, min_count=2, epochs=40)\n",
+    "model.build_vocab(trainCorpus)\n",
+    "model.train(trainCorpus, total_examples=model.corpus_count, epochs=model.epochs)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "eefe6b90",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2022-09-29 19:20:16,709 : WARNING : attribute doc_count not present in KeyedVectors<vector_size=50, 12 keys>; will store in internal index_to_key order\n",
+      "2022-09-29 19:20:16,712 : INFO : storing 12x50 projection weights into doc_tensor.w2v\n",
+      "2022-09-29 19:20:16,727 : INFO : running ../scripts/word2vec2tensor.py -i doc_tensor.w2v -o pdf_plot\n",
+      "2022-09-29 19:20:16,728 : INFO : loading projection weights from doc_tensor.w2v\n",
+      "2022-09-29 19:20:16,729 : INFO : KeyedVectors lifecycle event {'msg': 'loaded (12, 50) matrix of type float32 from doc_tensor.w2v', 'binary': False, 'encoding': 'utf8', 'datetime': '2022-09-29T19:20:16.729055', 'gensim': '4.2.0', 'python': '3.10.6 | packaged by conda-forge | (main, Aug 22 2022, 20:41:22) [Clang 13.0.1 ]', 'platform': 'macOS-12.0.1-arm64-arm-64bit', 'event': 'load_word2vec_format'}\n",
+      "2022-09-29 19:20:16,730 : INFO : 2D tensor file saved to pdf_plot_tensor.tsv\n",
+      "2022-09-29 19:20:16,730 : INFO : Tensor metadata file saved to pdf_plot_metadata.tsv\n",
+      "2022-09-29 19:20:16,731 : INFO : finished running word2vec2tensor.py\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "IAFOR Journal of Cultural Studies – Volume 6 – Issue 1 \n",
+      "frvir-2022-779148 1..5\n",
+      "ShareVR: Enabling Co-Located Experiences for Virtual Reality between HMD and Non-HMD Users\n",
+      "The effects of visual context and individual differences on perception and evaluation of modern art and graffiti art\n",
+      "User attention and behaviour in virtual reality art encounter\n",
+      "Microsoft Word - 48710116.DOC\n",
+      "pone.0099019 1..8\n",
+      "Making Art Therapy Virtual: Integrating Virtual Reality Into Art Therapy With Adolescents\n",
+      "Microsoft Word - CHI2018_LucidDreaming_v5.docx\n",
+      "g5grap.lo\n",
+      "None\n"
+     ]
+    }
+   ],
+   "source": [
+    "# generate and format data files for tensorboard visualisation\n",
+    "os.chdir(modelDataDir)\n",
+    "model.save_word2vec_format('doc_tensor.w2v', doctag_vec=True, word_vec=False)\n",
+    "%run ../scripts/word2vec2tensor.py -i doc_tensor.w2v -o pdf_plot\n",
+    "\n",
+    "text = \"\"    \n",
+    "with open('pdf_plot_metadata.tsv', 'w') as file:\n",
+    "    file.write('title\\n')\n",
+    "    for fname in os.listdir(txtExtractDir):\n",
+    "        if fname.endswith('.txt'):\n",
+    "            text = fname\n",
+    "            text = re.sub('\\[\\'', '', text)\n",
+    "            text = re.sub('\\'\\].txt', '', text)\n",
+    "            text = re.sub('\\[', '', text)\n",
+    "            text = re.sub('\\].txt', '', text)     \n",
+    "            print(text)\n",
+    "            file.write(\"%s\\n\" % text)\n",
+    "        else:\n",
+    "            continue\n",
+    "        "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "958a3c7c",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\"internet\" appears this many times in corpus:\n",
+      "{96}\n",
+      "\n"
+     ]
+    }
+   ],
+   "source": [
+    "# word occurence check\n",
+    "checkWord = \"internet\"\n",
+    "print(\"\\\"\" + str(checkWord) + \"\\\"\" + \" appears this many times in corpus:\") \n",
+    "print({model.wv.get_vecattr(checkWord, 'count')})\n",
+    "print()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "8b802f56",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "assessing the model (this can take a while)\n",
+      "\u001b[92mmodel assessed\u001b[0m\n",
+      "\n",
+      "\u001b[94mmodel trained and assessed successfully\u001b[0m\n"
+     ]
+    }
+   ],
+   "source": [
+    "# assessing the model\n",
+    "print(\"assessing the model (this can take a while)\")\n",
+    "ranks = []\n",
+    "secondRanks = []\n",
+    "for doc_id in range(len(trainCorpus)):\n",
+    "        inferredVector = model.infer_vector(trainCorpus[doc_id].words)\n",
+    "        sims = model.dv.most_similar([inferredVector], topn=len(model.dv))\n",
+    "        rank = [docid for docid, sim in sims].index(doc_id)\n",
+    "        ranks.append(rank)\n",
+    "        secondRanks.append(sims[1])\n",
+    "\n",
+    "counter = collections.Counter(ranks)\n",
+    "print(bcolors.OKGREEN + \"model assessed\" + bcolors.ENDC)\n",
+    "print()\n",
+    "print(bcolors.OKBLUE + \"model trained and assessed successfully\" + bcolors.ENDC)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "7eabd240",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "###### PART 2 - CHECK SIMILARITY BETWEEN CORPUS AND INCOMING DOCUMENT ######"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "id": "0bee916d",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "importing latin pdf\n",
+      "\n"
+     ]
+    }
+   ],
+   "source": [
+    "# import new document\n",
+    "\n",
+    "print('importing latin pdf')\n",
+    "with smart_open.open(testsDir + '/similarity-test.txt', 'w') as test:\n",
+    "    text = pdfminer_extraction(testsDir + '/latin.pdf')\n",
+    "    text = \"\".join(line.strip(\"\\n\") for line in text) \n",
+    "    test.write(text)\n",
+    "    \n",
+    "print()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "id": "f57ea2e6",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "tag and tokenize pdf for doc2vec processing\n",
+      "\n"
+     ]
+    }
+   ],
+   "source": [
+    "# tokenize and tag new document\n",
+    "print('tag and tokenize pdf for doc2vec processing')\n",
+    "def read_text(fname, tokens_only=False):\n",
+    "    with smart_open.open(fname, encoding=\"iso-8859-1\") as f:\n",
+    "        for i, line in enumerate(f):\n",
+    "            tokens = gensim.utils.simple_preprocess(line)\n",
+    "            if tokens_only:\n",
+    "                yield tokens\n",
+    "            else:\n",
+    "                # For training data, add tags\n",
+    "                yield gensim.models.doc2vec.TaggedDocument(tokens, [i])\n",
+    "                \n",
+    "similarityTest = list(read_text(testsDir + '/similarity-test.txt'))\n",
+    "\n",
+    "print()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "id": "e7926681",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "compare similarity between incoming pdf and text corpus (the model)\n",
+      "> Incoming pdf is 39% similar to corpus\n"
+     ]
+    }
+   ],
+   "source": [
+    "# check for similarity against the entire corpus\n",
+    "print('compare similarity between incoming pdf and text corpus (the model)')\n",
+    "novel_vector = model.infer_vector(similarityTest[0].words)\n",
+    "similarity_scores = model.dv.most_similar([novel_vector])\n",
+    "average = 0\n",
+    "for score in similarity_scores:\n",
+    "    average += score[1]\n",
+    "overall_similarity = average/len(similarity_scores)\n",
+    "\n",
+    "print(\"> Incoming pdf is \" + format((overall_similarity - 1) * -1, '.0%') + \" similar to corpus\")\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "9d90337e",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.10.6"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

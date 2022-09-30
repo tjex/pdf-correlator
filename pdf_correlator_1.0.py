@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[43]:
+# In[ ]:
 
 
-# coding: utf-8
+# pdf-correlator by Tillman Jex
+# github.com/tjex
+# tillmanjex@mailbox.org
 
 import os, glob, re, io, random, gensim, smart_open, logging, collections
 import numpy as np
@@ -42,13 +44,13 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 
-# In[2]:
+# In[ ]:
 
 
 ###### PART 1 - READ, EXTRACT, TRAIN AND ASSESS ######
 
 
-# In[3]:
+# In[ ]:
 
 
 # read files
@@ -66,7 +68,7 @@ def read_files():
 read_files()
 
 
-# In[4]:
+# In[ ]:
 
 
 # extract text from pdfs to designated directory and save as txt files.
@@ -102,7 +104,7 @@ def extract_to_txt():
 extract_to_txt()
 
 
-# In[5]:
+# In[ ]:
 
 
 # generate a training corpus from all txt files found in designated directory
@@ -126,7 +128,7 @@ class CorpusGen(object):
 trainCorpus = list(CorpusGen('/Users/tillman/t-root/dev/projects/2022/pdf-correlator/gitignored/txt-extractions'))
 
 
-# In[6]:
+# In[ ]:
 
 
 # save the entire corpus to a txt file
@@ -134,7 +136,7 @@ with open(modelDataDir + "/train-corpus.txt", 'w') as file:
     file.write(str(trainCorpus))
 
 
-# In[7]:
+# In[ ]:
 
 
 # establish a model and build the vocab
@@ -143,7 +145,7 @@ model.build_vocab(trainCorpus)
 model.train(trainCorpus, total_examples=model.corpus_count, epochs=model.epochs)
 
 
-# In[8]:
+# In[ ]:
 
 
 # generate and format data files for tensorboard visualisation
@@ -168,7 +170,7 @@ with open('pdf_plot_metadata.tsv', 'w') as file:
         
 
 
-# In[41]:
+# In[ ]:
 
 
 # word occurence check
@@ -178,7 +180,7 @@ print({model.wv.get_vecattr(checkWord, 'count')})
 print()
 
 
-# In[28]:
+# In[ ]:
 
 
 # assessing the model
@@ -198,14 +200,13 @@ print()
 print(bcolors.OKBLUE + "model trained and assessed successfully" + bcolors.ENDC)
 
 
-# In[12]:
+# In[ ]:
 
 
-print('###### PART 2 - CHECK SIMILARITY BETWEEN CORPUS AND INCOMING DOCUMENT ######')
-print()
+###### PART 2 - CHECK SIMILARITY BETWEEN CORPUS AND INCOMING DOCUMENT ######
 
 
-# In[37]:
+# In[ ]:
 
 
 # import new document
@@ -219,7 +220,7 @@ with smart_open.open(testsDir + '/similarity-test.txt', 'w') as test:
 print()
 
 
-# In[38]:
+# In[ ]:
 
 
 # tokenize and tag new document
@@ -239,7 +240,7 @@ similarityTest = list(read_text(testsDir + '/similarity-test.txt'))
 print()
 
 
-# In[39]:
+# In[ ]:
 
 
 # check for similarity against the entire corpus
