@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
+# In[1]:
 
 
 # pdf-correlator by Tillman Jex
@@ -28,7 +28,7 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=lo
 rootDir = "/Users/tillman/t-root/dev/projects/2022/pdf-correlator/gitignored"
 txtExtractDir = rootDir + '/txt-extractions'
 modelDataDir = rootDir + '/model-data'
-testsDir = rootDir + '/tests'
+testsDir = '/Users/tillman/t-root/dev/projects/2022/pdf-correlator/tests'
 zoteroDir = '/Users/tillman/t-root/zotero/storage'
 
 
@@ -50,14 +50,14 @@ class bcolors:
 ###### PART 1 - READ, EXTRACT, TRAIN AND ASSESS ######
 
 
-# In[ ]:
+# In[2]:
 
 
 # read files
 print("reading pdfs in" + str(rootDir) + " (including subdirectories)")
 def read_files():
     os.chdir(rootDir)
-    for file in glob.glob("**/*.pdf"):
+    for file in glob.glob("**/*.pdf", recursive=True):
         try:
             pdfFiles.append(file)
             pdfReaders.append(PdfReader(file))
@@ -68,7 +68,7 @@ def read_files():
 read_files()
 
 
-# In[ ]:
+# In[3]:
 
 
 # extract text from pdfs to designated directory and save as txt files.
@@ -104,7 +104,7 @@ def extract_to_txt():
 extract_to_txt()
 
 
-# In[ ]:
+# In[4]:
 
 
 # generate a training corpus from all txt files found in designated directory
@@ -128,7 +128,7 @@ class CorpusGen(object):
 trainCorpus = list(CorpusGen('/Users/tillman/t-root/dev/projects/2022/pdf-correlator/gitignored/txt-extractions'))
 
 
-# In[ ]:
+# In[5]:
 
 
 # save the entire corpus to a txt file
@@ -136,7 +136,7 @@ with open(modelDataDir + "/train-corpus.txt", 'w') as file:
     file.write(str(trainCorpus))
 
 
-# In[ ]:
+# In[6]:
 
 
 # establish a model and build the vocab
@@ -145,7 +145,7 @@ model.build_vocab(trainCorpus)
 model.train(trainCorpus, total_examples=model.corpus_count, epochs=model.epochs)
 
 
-# In[ ]:
+# In[7]:
 
 
 # generate and format data files for tensorboard visualisation
@@ -170,7 +170,7 @@ with open('pdf_plot_metadata.tsv', 'w') as file:
         
 
 
-# In[ ]:
+# In[8]:
 
 
 # word occurence check
@@ -180,7 +180,7 @@ print({model.wv.get_vecattr(checkWord, 'count')})
 print()
 
 
-# In[ ]:
+# In[9]:
 
 
 # assessing the model
@@ -206,21 +206,21 @@ print(bcolors.OKBLUE + "model trained and assessed successfully" + bcolors.ENDC)
 ###### PART 2 - CHECK SIMILARITY BETWEEN CORPUS AND INCOMING DOCUMENT ######
 
 
-# In[ ]:
+# In[13]:
 
 
 # import new document
 
 print('importing latin pdf')
 with smart_open.open(testsDir + '/similarity-test.txt', 'w') as test:
-    text = pdfminer_extraction(testsDir + '/latin.pdf')
+    text = pdfminer_extraction(testsDir + '/german.pdf')
     text = "".join(line.strip("\n") for line in text) 
     test.write(text)
     
 print()
 
 
-# In[ ]:
+# In[14]:
 
 
 # tokenize and tag new document
@@ -240,7 +240,7 @@ similarityTest = list(read_text(testsDir + '/similarity-test.txt'))
 print()
 
 
-# In[ ]:
+# In[15]:
 
 
 # check for similarity against the entire corpus

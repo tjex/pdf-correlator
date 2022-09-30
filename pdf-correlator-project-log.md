@@ -189,7 +189,7 @@ for i in range (1, len(docLabels)):
 print(train_corpus)
 ```
 
-This gets me a much cleaner list of tagged words, that resembles the format on the Gensim code examples. However, I'm not sure if the way I've iterated through the .txt docs above (in order to fill the train_corpus as one singular object) is correct. The object does get filled and tagged successfully, but the tagging is not consecutive across the documents. ie, new-dark-age.txt gets tagged up to tag=71, then the second document is processed, but starts with the first line being tagged as 0. This means that within the training corpus, there are multiple tags 0..1..2..etc.   
+This gets me a much cleaner list of tagged words, that resembles the format on the Gensim code examples. However, I'm not sure if the way I've iterated through the .txt docs above (in order to fill the `train_corpus` as one singular object) is correct. The object does get filled and tagged successfully, but the tagging is not consecutive across the documents. ie, new-dark-age.txt gets tagged up to tag=71, then the second document is processed, but starts with the first line being tagged as 0. This means that within the training corpus, there are multiple tags 0..1..2..etc.   
 I expect this will create innacurate behaviour as I expect each line in the final training corpus has to have a unique tag.
 
 ### 2022-09-22
@@ -351,7 +351,8 @@ Implemented the similarity test sollution from the above stack overflow link, wh
 
 As it's stated on the Gensim website, with a corpus size so low, statistical results are fairly innacurate. But to test this similarity sollution, I used two test pdfs. One was a lengthy file of generated latin text, the other was a pdf from Bundestag.de, which was in German (none of the pdfs in my corpus are in German). I did a quasi 'self-similarity' test by also feeding in what the model thinks are new pdfs, but are in fact pdfs that the model has already been trained on.   
 The similarity results were as followed:
-1. Latin pdf: 1% similar to corpus
-2. German pdf: 2% similar to corpus
+1. Latin pdf: 38% similar to corpus
+2. German pdf: 34% similar to corpus
 3. Identical pdfs from corpus: on average 85% similar to corpus 
 
+Done 🕺
