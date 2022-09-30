@@ -1,16 +1,12 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
+# note - at time of writing, the word2vec2tensor.py script that is run in this code only works in Jupyter notebook
+# therefore, if you would like to run the code, and this text is still here to be read, then it means I didn't fix it in time and you will need to run it from jupyter notebook...
+# you will also of course need to install the relevant packages (see readme)
 
 # pdf-correlator by Tillman Jex
 # github.com/tjex
 # tillmanjex@mailbox.org
 
-import os, glob, re, io, random, gensim, smart_open, logging, collections
-import numpy as np
-import pandas as pd
+import os, glob, re, io, random, gensim, smart_open, logging, collections, sys
 
 from PyPDF2 import PdfReader
 from pdfminer.high_level import extract_text as pdfminer_extraction
@@ -18,18 +14,17 @@ from pdfminer.high_level import extract_text_to_fp
 from pdfminer.layout import LAParams
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 from gensim.test.utils import get_tmpfile
-from nltk.tokenize import word_tokenize
 
 pdfReaders = []
 pdfFiles = []
 docLabels = []
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
-rootDir = "/Users/tillman/t-root/dev/projects/2022/pdf-correlator/gitignored"
+rootDir = sys.path[0]
+pdfReadRootDir = rootDir + "/pdf-tests" # change this to where you would like to search for pdfs from
 txtExtractDir = rootDir + '/txt-extractions'
 modelDataDir = rootDir + '/model-data'
-testsDir = '/Users/tillman/t-root/dev/projects/2022/pdf-correlator/tests'
-zoteroDir = '/Users/tillman/t-root/zotero/storage'
+testsDir = rootDir + '/tests'
 
 
 class bcolors:
@@ -43,20 +38,12 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
-
-# In[ ]:
-
-
 ###### PART 1 - READ, EXTRACT, TRAIN AND ASSESS ######
-
-
-# In[2]:
-
 
 # read files
 print("reading pdfs in" + str(rootDir) + " (including subdirectories)")
 def read_files():
-    os.chdir(rootDir)
+    os.chdir(pdfReadRootDir)
     for file in glob.glob("**/*.pdf", recursive=True):
         try:
             pdfFiles.append(file)
@@ -66,10 +53,6 @@ def read_files():
     print(bcolors.OKGREEN + "pdf files read" + bcolors.ENDC)
     print()
 read_files()
-
-
-# In[3]:
-
 
 # extract text from pdfs to designated directory and save as txt files.
 def extract_to_txt():
@@ -103,10 +86,6 @@ def extract_to_txt():
     print(bcolors.OKGREEN + "pdf extraction complete" + bcolors.ENDC)
 extract_to_txt()
 
-
-# In[4]:
-
-
 # generate a training corpus from all txt files found in designated directory
 class CorpusGen(object):
     def __init__(self, dirname):
@@ -125,10 +104,8 @@ class CorpusGen(object):
                         yield gensim.models.doc2vec.TaggedDocument(tokens, [counter])
             counter += 1
         
-trainCorpus = list(CorpusGen('/Users/tillman/t-root/dev/projects/2022/pdf-correlator/gitignored/txt-extractions'))
+trainCorpus = list(CorpusGen(txtExtractDir))
 
-
-# In[5]:
 
 
 # save the entire corpus to a txt file
@@ -136,16 +113,12 @@ with open(modelDataDir + "/train-corpus.txt", 'w') as file:
     file.write(str(trainCorpus))
 
 
-# In[6]:
-
 
 # establish a model and build the vocab
 model = gensim.models.doc2vec.Doc2Vec(vector_size=50, min_count=2, epochs=40)
 model.build_vocab(trainCorpus)
 model.train(trainCorpus, total_examples=model.corpus_count, epochs=model.epochs)
 
-
-# In[7]:
 
 
 # generate and format data files for tensorboard visualisation
@@ -167,21 +140,13 @@ with open('pdf_plot_metadata.tsv', 'w') as file:
             file.write("%s\n" % text)
         else:
             continue
-        
-
-
-# In[8]:
 
 
 # word occurence check
-checkWord = "internet"
+checkWord = "the"
 print("\"" + str(checkWord) + "\"" + " appears this many times in corpus:") 
 print({model.wv.get_vecattr(checkWord, 'count')})
 print()
-
-
-# In[9]:
-
 
 # assessing the model
 print("assessing the model (this can take a while)")
@@ -200,17 +165,9 @@ print()
 print(bcolors.OKBLUE + "model trained and assessed successfully" + bcolors.ENDC)
 
 
-# In[ ]:
-
-
 ###### PART 2 - CHECK SIMILARITY BETWEEN CORPUS AND INCOMING DOCUMENT ######
 
-
-# In[13]:
-
-
 # import new document
-
 print('importing latin pdf')
 with smart_open.open(testsDir + '/similarity-test.txt', 'w') as test:
     text = pdfminer_extraction(testsDir + '/german.pdf')
@@ -218,10 +175,6 @@ with smart_open.open(testsDir + '/similarity-test.txt', 'w') as test:
     test.write(text)
     
 print()
-
-
-# In[14]:
-
 
 # tokenize and tag new document
 print('tag and tokenize pdf for doc2vec processing')
@@ -239,10 +192,6 @@ similarityTest = list(read_text(testsDir + '/similarity-test.txt'))
 
 print()
 
-
-# In[15]:
-
-
 # check for similarity against the entire corpus
 print('compare similarity between incoming pdf and text corpus (the model)')
 novel_vector = model.infer_vector(similarityTest[0].words)
@@ -253,10 +202,4 @@ for score in similarity_scores:
 overall_similarity = average/len(similarity_scores)
 
 print("> Incoming pdf is " + format((overall_similarity - 1) * -1, '.0%') + " similar to corpus")
-
-
-# In[ ]:
-
-
-
 

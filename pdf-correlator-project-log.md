@@ -344,7 +344,6 @@ Although through this process I could infact achieve the end goal. If I set up a
 [good jupyter notebook on doc2vec + tensorboard](https://nbviewer.org/github/RaRe-Technologies/gensim/blob/8f7c9ff4c546f84d42c220dcf28543500747c171/docs/notebooks/Tensorboard_visualizations.ipynb#Training-the-Doc2Vec-Model)
 
 Generated and formated files for tensor properly, but there is a missmatch between amount of vectors and amount of metadata tags. Fixed, was because of the table heading in id metadata.   
-![visualisation of the similarity between pdfs in my zotero library!](./media/tensorboard.png)
 
 ### 2022-09-29
 Implemented the similarity test sollution from the above stack overflow link, which checks for similarity between the entire model and a singular incoming pdf (ie not in the corpus already). 
